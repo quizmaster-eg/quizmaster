@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QuizMaster</title>
+<style>
+:root{--bg:#f4f5fb;--card:#fff;--text:#1d1b3a;--muted:#6b6a85;--pri:#5b4bdb;--pri2:#7c6cf0;--ok:#1f9d63;--okbg:#e3f6ec;--bad:#d64545;--badbg:#fde8e8;--line:#e3e2f0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14132a;--card:#1f1e3a;--text:#eeedff;--muted:#a3a2c4;--pri:#8b7dff;--pri2:#a79cff;--ok:#4fd18f;--okbg:#17372b;--bad:#ff7b7b;--badbg:#3d1f26;--line:#34335a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14132a;--card:#1f1e3a;--text:#eeedff;--muted:#a3a2c4;--pri:#8b7dff;--pri2:#a79cff;--ok:#4fd18f;--okbg:#17372b;--bad:#ff7b7b;--badbg:#3d1f26;--line:#34335a}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;display:flex;justify-content:center;padding:20px 14px}
+.app{width:100%;max-width:620px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 8px 30px rgba(60,50,150,.08)}
+h1{margin:0 0 6px;font-size:26px;font-weight:800}
+h2{margin:0 0 14px;font-size:18px;line-height:1.55}
+p{color:var(--muted);margin:0 0 16px;line-height:1.6}
+.logo{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-radius:14px;padding:6px 14px;font-weight:800;margin-bottom:14px}
+.cats{display:grid;gap:10px}
+.cat{display:flex;align-items:center;gap:12px;padding:13px 14px;border:2px solid var(--line);border-radius:14px;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left}
+.cat:hover{border-color:var(--pri)}
+.cat span{font-size:22px}.cat small{color:var(--muted);margin-inline-start:auto;font-weight:600}
+.btn{width:100%;padding:13px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;font:inherit;font-weight:800;font-size:16px;cursor:pointer;margin-top:12px}
+.btn.ghost{background:transparent;color:var(--pri);border:2px solid var(--pri)}
+.btn.ok{background:var(--ok)}.btn.bad{background:var(--bad)}
+.row{display:flex;gap:10px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:700;color:var(--muted);font-size:14px}
+.timer{color:var(--pri);font-size:18px;font-weight:800;min-width:24px;text-align:end}.timer.low{color:var(--bad)}
+.bar{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2));transition:width .3s}
+.opt{display:block;width:100%;text-align:left;padding:13px 16px;margin-bottom:10px;border:2px solid var(--line);border-radius:14px;background:transparent;color:var(--text);font:inherit;font-size:16px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--pri)}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.tag{font-size:12px;font-weight:800;color:var(--pri);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.ctx{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px;line-height:1.7;white-space:pre-line;font-size:14px}
+.ans{background:var(--okbg);border:1px solid var(--ok);border-radius:14px;padding:14px;line-height:1.8;white-space:pre-line;margin-top:6px}
+.note{background:var(--badbg);border-radius:12px;padding:10px 12px;margin-top:6px;line-height:1.6}
+.inp{width:100%;padding:13px;border:2px solid var(--line);border-radius:14px;background:transparent;color:var(--text);font:inherit;font-size:16px}
+.inp:focus{outline:0;border-color:var(--pri)}
+.score{font-size:56px;font-weight:800;text-align:center;color:var(--pri);margin:4px 0}
+.center{text-align:center}
+.rev{border-top:1px solid var(--line);padding:12px 0;font-size:15px;line-height:1.7}
+.rev b{color:var(--bad)}.rev em{color:var(--ok);font-style:normal;font-weight:700;white-space:pre-line}
+</style>
+</head>
+<body>
+<div class="app"><div class="card" id="root"></div></div>
+<script>
+const AC="An expert system uses these rules:\nRule 1: IF the air conditioner does not operate AND the power supply is disconnected THEN the problem is a power supply interruption.\nRule 2: IF the air conditioner operates AND cooling is weak THEN check the refrigerant level.\nRule 3: IF the air conditioner does not operate AND the power supply is connected THEN check the electrical fuse.";
+const BANK={
+def:[
+["Define: (1) Artificial Intelligence (2) Expert Systems (3) Knowledge Base (4) Inference Engine (5) User Interface.","1. AI: A branch of computer science that develops systems capable of tasks that typically require human intelligence, such as learning, reasoning, and problem-solving.\n2. Expert Systems: Programs that use specialized knowledge and inference rules to solve specific problems, simulating aspects of human expert reasoning.\n3. Knowledge Base: The component containing the facts, rules, and specialized knowledge required to solve problems in a domain.\n4. Inference Engine: The component that applies rules to available facts to derive conclusions and recommendations.\n5. User Interface: The means through which users enter information and receive results."],
+["What is an expert system? What are its main objectives?","A computer-based system that uses specialized knowledge in a domain, together with logical rules and inference mechanisms, to provide solutions or recommendations for specific problems.\nObjectives:\n• Supporting decision-making\n• Diagnosing problems and faults\n• Providing specialized expertise when needed\n• Reducing the time required to reach a solution\n• Preserving expert knowledge so it can be reused"],
+["Define Knowledge Engineering and explain its importance.","The process of collecting knowledge from human experts and specialized sources, then analyzing, organizing, and representing it in a form an expert system can use.\nImportance: it transforms human expertise into organized facts and rules, allowing computers to analyze problems and derive solutions."],
+["What are Production Rules? Give an example.","A method of representing knowledge as conditions and conclusions, written as:\nIF condition THEN conclusion\nIf the condition is satisfied, the system derives a conclusion or recommends an action.\nExample: IF temperature is high THEN check cooling system."],
+["Define Domain Expert and Knowledge Engineer. Explain the difference between them.","• Domain Expert: a person with specialized knowledge and practical experience in a field (e.g. medicine, electrical engineering, industrial maintenance).\n• Knowledge Engineer: the person who acquires knowledge from domain experts and transforms it into facts and rules the expert system can use.\nDifference: the domain expert provides the knowledge; the knowledge engineer organizes and represents it in the computer system."]],
+exp:[
+["Explain the main components of an expert system and the function of each.","1. Knowledge Base: stores specialized facts and rules.\n2. Inference Engine: applies rules and derives conclusions.\n3. Working Memory: stores facts about the current problem.\n4. User Interface: lets users enter information and view results.\n5. Explanation Facility: explains the reasoning behind conclusions and the rules used.\n6. Knowledge Acquisition Component: supports collecting, adding, and updating knowledge."],
+["Explain how an expert system works, from receiving a problem to reaching a solution.","1. The user enters the problem data.\n2. Relevant facts are stored in working memory.\n3. The inference engine examines the rules in the knowledge base.\n4. The system identifies rules whose conditions match the facts.\n5. It derives new conclusions or identifies appropriate actions.\n6. The result or recommendation is presented to the user.\n7. The explanation facility may explain how the conclusion was reached.\nExample: if a motor is overheating, the system may use rules to identify causes such as excessive load or poor ventilation and recommend inspections."],
+["What is Knowledge Representation? Explain its main methods.","Organizing information and expertise into a form a computer can store, process, and use for reasoning.\nMethods:\n• Production Rules: IF–THEN rules\n• Semantic Networks: relationships between concepts\n• Frames: structured entities with attributes and values\n• Logic: facts and relationships as logical statements\nThe appropriate method depends on the problem and the system design."],
+["Explain the main applications of expert systems, giving an example of each.","1. Medicine: analyzing symptoms and identifying possible diagnoses.\n2. Industry: diagnosing faults in machines and equipment.\n3. Agriculture: identifying plant diseases and recommending treatments.\n4. Education: giving learning guidance based on students' mistakes.\n5. Banking: supporting risk assessment and rule-based decisions.\n6. Electrical Engineering: diagnosing circuit and power system faults.\nIn sensitive applications (medicine, industrial safety) recommendations should be reviewed by qualified professionals."],
+["Explain the main advantages and disadvantages of expert systems.","Advantages:\n• Fast processing of well-defined problems\n• Continuous availability of specialized knowledge\n• Consistent decisions when the same rules are applied\n• Ability to explain conclusions in many rule-based systems\n• Preservation and documentation of human expertise\nDisadvantages:\n• Difficulty acquiring knowledge from experts\n• Potentially high development and maintenance costs\n• Limited handling of unfamiliar cases not in the knowledge base\n• Dependence on the quality of rules and facts\n• Need for regular knowledge-base updates"]],
+cmp:[
+["Compare Artificial Intelligence and Expert Systems.","• Concept: AI is a broad field for developing intelligent systems; Expert Systems are a specialized application of AI.\n• Objective: AI performs tasks like learning, planning, reasoning; Expert Systems solve specialized problems using domain knowledge.\n• Methods: AI uses machine learning, reasoning, planning, etc.; Expert Systems use knowledge bases and inference engines.\n• Example: AI: image-recognition system; Expert System: equipment fault diagnosis system."],
+["Compare an expert system with a human expert.","• Source of knowledge: represented within the system / education, experience, practical learning.\n• Working speed: fast within its designed scope / varies by person and problem.\n• Unfamiliar cases: may struggle outside its domain / can use judgment and broader experience.\n• Availability: operates whenever available / may need rest and not always available.\n• Explanation: can present the rules used / explains using professional experience.\n• Flexibility: limited by what is represented / often more flexible in complex situations."],
+["Compare the Knowledge Base and Working Memory.","• Content: specialized facts and rules / facts about the current case and temporary results.\n• Function: provides knowledge needed for problem-solving / holds problem information during reasoning.\n• Usage: used across multiple cases / usually changes from case to case.\n• Example: a rule that excessive load may raise motor temperature / a fact that the current motor runs under excessive load."],
+["Compare Forward Chaining and Backward Chaining.","• Starting point: available facts / a goal or hypothesis to verify.\n• Direction: from facts to conclusions / from goal to needed evidence.\n• Objective: discover conclusions that follow from known facts / determine whether a hypothesis is supported.\n• Application: diagnosing from observed symptoms / testing whether a particular fault is the cause.\nForward example: Fact: motor temperature is high. Rule: IF temperature is high THEN check cooling system. Conclusion: recommend checking the cooling system.\nBackward example: Goal: is the cooling system faulty? The system examines facts and evidence related to the goal and checks whether the conditions supporting the conclusion are satisfied."]],
+prac:[
+["What facts does the system need to know?","It needs to know whether the air conditioner is operating, whether the power supply is connected, and whether cooling is weak when the unit operates.",AC],
+["What is the result if the air conditioner does not operate and the power supply is disconnected?","The system concludes the problem is a power supply interruption, according to Rule 1.",AC],
+["What is the result if the air conditioner does not operate and the power supply is connected?","The system recommends checking the electrical fuse, according to Rule 3.",AC],
+["What is the role of the inference engine in this example?","It matches the facts entered by the user with the conditions of the rules, identifies the applicable rule, and derives the appropriate conclusion.",AC],
+["Write an additional rule to diagnose another air conditioner problem.","IF the air conditioner operates AND airflow is weak THEN inspect the air filter.\nThis recommends inspecting the air filter when the unit operates but airflow is weak.",AC],
+["Write a short essay about expert systems, explaining their components, applications, advantages, and disadvantages.","Expert systems are an important application of Artificial Intelligence. They use specialized knowledge to solve specific problems and provide recommendations or decision support.\nComponents: a Knowledge Base (facts and rules), an Inference Engine (applies rules to derive conclusions), Working Memory (current problem information), a User Interface, and an Explanation Facility.\nApplications: medical diagnosis, industrial maintenance, electrical fault analysis, agriculture, and financial decision support.\nAdvantages: fast reasoning, preserving and reusing expertise, consistent application of rules.\nLimitations: difficulty acquiring expert knowledge, need to update the knowledge base, limited performance with unfamiliar situations.\nThey remain useful decision-support tools, can be integrated with modern AI, and their outputs should be reviewed by qualified professionals in sensitive applications."]],
+fill:[
+["An expert system is an application of ____.","Artificial Intelligence",["artificial intelligence","ai"]],
+["The component that contains specialized facts and rules is called the ____.","Knowledge Base",["knowledge base","the knowledge base"]],
+["The component responsible for applying rules and deriving conclusions is called the ____.","Inference Engine",["inference engine","the inference engine"]],
+["A person who possesses specialized knowledge in a particular field is called a ____.","Domain Expert",["domain expert","expert"]],
+["A production rule commonly consists of IF and ____.","THEN",["then"]],
+["The process of collecting and organizing knowledge to build an expert system is called ____.","Knowledge Engineering",["knowledge engineering"]],
+["Forward chaining starts with ____ to derive conclusions.","Available facts",["available facts","facts","the available facts"]],
+["Backward chaining starts with a ____ to determine whether it can be supported.","Goal or hypothesis",["goal","hypothesis","goal or hypothesis","goal hypothesis"]],
+["The component that allows users to enter data and receive results is the ____.","User Interface",["user interface","ui","the user interface"]],
+["The Explanation Facility helps clarify the ____ that led to a conclusion.","Rules and reasoning",["rules","reasoning","rules and reasoning"]],
+["A historical medical expert system is called ____.","MYCIN",["mycin"]]],
+tf:[
+["The knowledge base contains specialized facts and rules.",true,""],
+["The inference engine is the same as the user interface.",false,"The inference engine applies rules, while the user interface enables interaction with the user."],
+["Expert systems can be used to diagnose industrial equipment faults.",true,""],
+["Every expert system must learn autonomously from data.",false,"Traditional expert systems generally rely on knowledge and rules provided by experts; autonomous learning is not required."],
+["Forward chaining uses available facts to derive new conclusions.",true,""],
+["Expert systems are limited to the medical field.",false,"Expert systems are used in medicine, industry, agriculture, engineering, and other fields."],
+["Knowledge can be represented using IF–THEN rules.",true,""]],
+mcq:[
+["Which component is responsible for applying knowledge rules?",["User Interface","Inference Engine","Keyboard","Screen"],1],
+["Which of the following represents a production rule?",["An expert system is a computer program.","IF temperature is high THEN check the cooling system.","A computer is an electronic device.","Knowledge is important."],1],
+["Which reasoning method starts with a goal and searches for evidence to support it?",["Forward Chaining","Backward Chaining","Image Processing","Data Sorting"],1],
+["Who is responsible for transforming expert knowledge into rules a computer can use?",["Knowledge Engineer","End User Only","Computer Operator","Network Manager"],0],
+["Which of the following is a disadvantage of expert systems?",["The ability to store knowledge","The speed of applying rules","The difficulty of acquiring and updating knowledge","The ability to explain some conclusions"],2]]
+};
+const TYPES=[
+['def','Definitions','📘','es'],['exp','Explanation','💡','es'],['cmp','Comparison','⚖️','es'],
+['fill','Fill in the blanks','✏️','fill'],['tf','True / False','✅','tf'],['mcq','Multiple choice','🔘','mcq'],['prac','Practical & essay','🛠️','es']];
+const TIME=20,root=document.getElementById('root');
+let SAMPLE=null;(async()=>{try{if(window.claude)SAMPLE=await claude.use('sample')}catch(e){}})();
+let qs,i,score,wrong,t,iv,mode;
+const shuf=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a};
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const kindOf=k=>TYPES.find(x=>x[0]===k)[3], nameOf=k=>TYPES.find(x=>x[0]===k)[1];
+
+function home(){
+  clearInterval(iv);
+  root.innerHTML=`<div class="logo">🧠 QuizMaster</div><h1>Expert Systems</h1><p>Chapter One — choose a question type.</p><div class="cats">
+  <button class="cat" data-m="mix"><span>🎯</span>Full bank (all questions)<small>${TYPES.reduce((n,[k])=>n+BANK[k].length,0)}</small></button>
+  ${TYPES.map(([k,n,ic])=>`<button class="cat" data-m="${k}"><span>${ic}</span>${n}<small>${BANK[k].length}</small></button>`).join('')}</div>`;
+  root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>start(b.dataset.m));
+}
+function start(m){
+  mode=m;
+  const all=k=>BANK[k].map(x=>({k,x}));
+  qs=m==='mix'?TYPES.flatMap(([k])=>all(k)):(['fill','prac','def','exp','cmp'].includes(m)?all(m):shuf(all(m)));
+  qs.forEach(q=>{if(q.k==='mcq')q.o=shuf(q.x[1].map((v,n)=>({v,ok:n===q.x[2]})))});
+  i=0;score=0;wrong=[];show();
+}
+function head(q){return `<div class="top"><span>Question ${i+1} of ${qs.length}</span><span>Score: ${+score.toFixed(1)}</span><span class="timer" id="tm"></span></div><div class="bar"><i style="width:${i/qs.length*100}%"></i></div><div class="tag">${nameOf(q.k)}</div>`}
+function show(){
+  clearInterval(iv);const q=qs[i],kd=kindOf(q.k);
+  if(q.k==='def')return showDef(q);
+  if(kd==='es')return showEs(q);
+  if(kd==='fill')return showFill(q);
+  root.innerHTML=head(q)+`<h2>${q.x[0]}</h2><div>`+(kd==='mcq'?q.o.map((o,n)=>`<button class="opt" data-n="${n}">${o.v}</button>`).join(''):`<button class="opt" data-n="1">✔ True</button><button class="opt" data-n="0">✘ False</button>`)+`</div><div id="fb"></div>`;
+  root.querySelectorAll('.opt').forEach(b=>b.onclick=()=>pick(+b.dataset.n));
+  t=TIME;const tm=document.getElementById('tm');tm.textContent=t;
+  iv=setInterval(()=>{t--;tm.textContent=t;tm.classList.toggle('low',t<=5);if(t<=0)pick(-1)},1000);
+}
+function nextBtn(){document.getElementById('fb').insertAdjacentHTML('beforeend',`<button class="btn" id="nx">${i+1<qs.length?'Next':'See results'}</button>`);document.getElementById('nx').onclick=next}
+function pick(n){
+  clearInterval(iv);const q=qs[i],btns=root.querySelectorAll('.opt');let ok,you,rt;
+  if(q.k==='mcq'){ok=n>=0&&q.o[n].ok;rt=q.o.find(o=>o.ok).v;you=n>=0?q.o[n].v:'Time is up';
+    btns.forEach((b,k)=>{b.disabled=true;if(q.o[k].ok)b.classList.add('ok');else if(k===n)b.classList.add('bad')});}
+  else{const c=q.x[1]?1:0;ok=n===c;rt=q.x[1]?'True':'False';you=n<0?'Time is up':(n?'True':'False');
+    btns.forEach(b=>{b.disabled=true;if(+b.dataset.n===c)b.classList.add('ok');else if(+b.dataset.n===n)b.classList.add('bad')});
+    if(!ok&&q.x[2])document.getElementById('fb').innerHTML=`<div class="note">Correction: ${q.x[2]}</div>`;}
+  if(ok)score++;else wrong.push({q:q.x[0],you,right:rt});
+  nextBtn();
+}
+function showFill(q){
+  root.innerHTML=head(q)+`<h2>${q.x[0]}</h2><input class="inp" id="in" placeholder="Type your answer" autocomplete="off"><div id="fb"><button class="btn" id="ck">Check</button></div>`;
+  document.getElementById('tm').textContent='';
+  const inp=document.getElementById('in');inp.focus();
+  const check=()=>{
+    const v=norm(inp.value);if(!v)return;inp.disabled=true;
+    const ok=q.x[2].includes(v);
+    if(ok){score++;document.getElementById('fb').innerHTML=`<div class="ans">Correct ✔ — ${q.x[1]}</div>`}
+    else{document.getElementById('fb').innerHTML=`<div class="note">Not quite. Correct answer: <b>${q.x[1]}</b></div><button class="btn ghost" id="mk">My answer was also correct</button>`;
+      let counted=false;wrong.push({q:q.x[0],you:inp.value,right:q.x[1]});
+      document.getElementById('mk').onclick=e=>{if(!counted){counted=true;score++;wrong.pop();e.target.disabled=true;e.target.textContent='Counted as correct ✔'}};}
+    nextBtn();};
+  document.getElementById('ck').onclick=check;
+  inp.onkeydown=e=>{if(e.key==='Enter'){const nx=document.getElementById('nx');nx?nx.click():check()}};
+}
+function showEs(q){
+  root.innerHTML=head(q)+(q.x[2]?`<div class="ctx">${q.x[2]}</div>`:'')+`<h2>${q.x[0]}</h2><p>Think of your answer first, then reveal the model answer.</p><div id="fb"><button class="btn" id="rv">Show model answer</button></div>`;
+  document.getElementById('rv').onclick=()=>{
+    document.getElementById('fb').innerHTML=`<div class="ans">${q.x[1]}</div><div class="row"><button class="btn bad" id="no">Need to review</button><button class="btn ok" id="yes">I knew it</button></div>`;
+    document.getElementById('yes').onclick=()=>{score++;next()};
+    document.getElementById('no').onclick=()=>{wrong.push({q:q.x[0],you:null,right:q.x[1]});next()};
+  };
+}
+async function showDef(q){
+  const model=q.x[1],esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  root.innerHTML=head(q)+`<h2>${q.x[0]}</h2><p>Write your answer in Arabic or English. It will be checked, then the model answer appears.</p><textarea class="inp" id="ta" rows="6" placeholder="Type your answer here..."></textarea><div id="fb"><button class="btn" id="ck">Check my answer</button><button class="btn ghost" id="sk">Skip and show the model answer</button></div>`;
+  document.getElementById('tm').textContent='';
+  const ta=document.getElementById('ta'),fb=document.getElementById('fb');
+  const reveal=(res,msg)=>{
+    ta.disabled=true;
+    const L={correct:'Correct ✔',partial:'Partly correct',incorrect:'Needs work'};
+    let h=msg?`<div class="note">${msg}</div>`:'';
+    if(res)h+=`<div class="${res.verdict==='correct'?'ans':'note'}"><b>${L[res.verdict]}</b><br>${esc(res.feedback||'')}</div>`;
+    h+=`<div class="tag" style="margin-top:14px">Model answer</div><div class="ans">${model}</div>`;
+    if(res){
+      h+=`<button class="btn" id="nx">${i+1<qs.length?'Next':'See results'}</button>`;
+      fb.innerHTML=h;
+      score+=res.verdict==='correct'?1:res.verdict==='partial'?0.5:0;
+      if(res.verdict!=='correct')wrong.push({q:q.x[0],you:null,right:model});
+      document.getElementById('nx').onclick=next;
+    }else{
+      h+=`<div class="row"><button class="btn bad" id="no">Need to review</button><button class="btn ok" id="yes">I knew it</button></div>`;
+      fb.innerHTML=h;
+      document.getElementById('yes').onclick=()=>{score++;next()};
+      document.getElementById('no').onclick=()=>{wrong.push({q:q.x[0],you:null,right:model});next()};
+    }
+  };
+  document.getElementById('sk').onclick=()=>reveal(null);
+  document.getElementById('ck').onclick=async()=>{
+    const ans=ta.value.trim();if(!ans)return;
+    if(!SAMPLE)return reveal(null,'Automatic checking is not available here. Compare your answer with the model answer.');
+    ta.disabled=true;fb.innerHTML='<p>Checking your answer…</p>';
+    try{
+      const r=await SAMPLE.json(`You are grading a student's answer to a question from an Expert Systems course.
+Question: ${q.x[0]}
+
+Model answer:
+${model}
+
+Student answer:
+${ans}
+
+The student may write in Arabic or English. Accept either language and accept equivalent wording. Judge only whether the meaning matches the model answer. If the question has several parts, check each part. Return ONLY JSON in this form: {"verdict":"correct"|"partial"|"incorrect","feedback":"2-3 short sentences on what was right and what was missing, in the same language as the student's answer"}`,{modelTier:'quick'});
+      if(!r||!['correct','partial','incorrect'].includes(r.verdict))throw new Error('bad');
+      reveal(r);
+    }catch(e){reveal(null,'Could not check automatically. Compare your answer with the model answer.')}
+  };
+}
+function next(){i++;i<qs.length?show():end()}
+function end(){
+  const p=Math.round(score/qs.length*100);
+  const msg=p===100?'Perfect score! 🏆':p>=60?'Great job 👏':'Keep reviewing, you will get there 💪';
+  root.innerHTML=`<div class="center"><div class="logo">Results</div><div class="score">${+score.toFixed(1)}/${qs.length}</div><h2>${msg}</h2></div>
+  ${wrong.length?`<p style="margin-bottom:4px">To review:</p>${wrong.map(w=>`<div class="rev">${w.q}<br>${w.you===null?`<em>${w.right}</em>`:`Your answer: <b>${w.you}</b> — Correct: <em>${w.right}</em>`}</div>`).join('')}`:''}
+  <button class="btn" id="again">Retry this quiz</button><button class="btn ghost" id="hm">Main menu</button>`;
+  document.getElementById('again').onclick=()=>start(mode);document.getElementById('hm').onclick=home;
+}
+home();
+</script>
+</body>
+</html>
